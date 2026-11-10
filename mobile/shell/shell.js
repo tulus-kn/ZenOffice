@@ -238,7 +238,7 @@
     const name = file && file.name ? file.name : ''
     if (!name || !appForName(name)) return null
     return {
-      path: 'ZenOffice/' + basename(name),
+      path: 'Andi Kore Office/' + basename(name),
       name: name,
       app: appForName(name),
       at: Number(file.mtime) || 0,
@@ -433,8 +433,8 @@
     const home = `
       <div class="tab tab-home ${state.active === 'home' ? 'active' : ''}${homeFx.cls}"${homeFx.style} role="tab"
            tabindex="0" aria-selected="${state.active === 'home'}" data-tab="home">
-        <img class="tab-icon tab-icon-home" src="./shim/assets/zenoffice-logo.png" alt="" />
-        <span class="tab-title">ZenOffice</span>
+        <span class="tab-icon tab-icon-home ak-badge" style="font-size:8px">AK</span>
+        <span class="tab-title">Andi Kore Office</span>
       </div>`
 
     const tabs = state.tabs
@@ -842,7 +842,7 @@
           result = await plugin.printSystem({
             html: String(data.html || ''),
             baseUrl: String(data.baseUrl || window.location.href),
-            jobName: String(data.jobName || 'ZenOffice'),
+            jobName: String(data.jobName || 'Andi Kore Office'),
             delayMs: Number(data.delayMs) || 700,
             widthIn: Number(data.widthIn) || 8.27,
             heightIn: Number(data.heightIn) || 11.69,
@@ -973,11 +973,11 @@
         state.view === 'starred'
           ? 'Files you marked for quick access.'
           : state.view === 'files'
-            ? 'Everything stored in Documents/ZenOffice.'
+            ? 'Everything stored in Documents/Andi Kore Office.'
             : ''
       return `
         <div class="hero">
-          <div class="hero-greeting">ZenOffice</div>
+          <div class="hero-greeting">Andi Kore Office</div>
           <h1 class="hero-title">${title}</h1>
           ${sub ? `<p class="hero-sub">${sub}</p>` : ''}
         </div>`
@@ -1127,12 +1127,12 @@
       </div>`
   }
 
-  // ── ZenOffice: preferences, about page, file preview ─────────────────────
+  // ── Andi Kore Office: preferences, about page, file preview ─────────────────────
 
   const PREFS_KEY = LS + 'prefs.v1'
   const ANDROID_LS = 'genoffice.android.'
   const APP_VERSION = '0.1.0-beta' // keep in sync with versionName in android/app/build.gradle
-  const APP_PACKAGE = 'com.minhaj.zenoffice' // applicationId
+  const APP_PACKAGE = 'com.andikore.office' // applicationId
   const LANG_NAMES = {
     zh: '中文', en: 'English', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch',
     es: 'Español', th: 'ไทย', id: 'Bahasa Indonesia', ru: 'Русский', ar: 'العربية',
@@ -1191,7 +1191,7 @@
     let ok = false
     if (fs) {
       try {
-        await fs.stat({ path: 'ZenOffice', directory: 'DOCUMENTS' })
+        await fs.stat({ path: 'Andi Kore Office', directory: 'DOCUMENTS' })
         ok = true
       } catch (e) {
         ok = false
@@ -1360,7 +1360,7 @@
     if (kind === 'licenses') {
       openDialog(
         '<h3>Third-party licenses</h3><div class="zen-modal-body">' +
-        '<p><b>ZenOffice</b> is based on <b>GenOffice</b>, Copyright 2026 Mainfunc, Inc., licensed under the Apache License 2.0. The full license text is the LICENSE file of the source repository, and its NOTICE file is kept unchanged.</p>' +
+        '<p><b>Andi Kore Office</b> is based on <b>ZenOffice</b> (Android port of <b>GenOffice</b>), Copyright 2026 Mainfunc, Inc., licensed under the Apache License 2.0. The full license text is the LICENSE file of the source repository, and its NOTICE file is kept unchanged.</p>' +
         '<p>Android wrapper dependencies:</p><ul>' +
         '<li>Capacitor core, Android and Filesystem: MIT</li>' +
         '<li>SheetJS (xlsx 0.18.5): Apache-2.0</li>' +
@@ -1468,7 +1468,7 @@
     try {
       r = await fs.readFile({ path: entry.path, directory: 'DOCUMENTS' })
     } catch (e) {
-      return pvNote('The file could not be read from Documents/ZenOffice.')
+      return pvNote('The file could not be read from Documents/Andi Kore Office.')
     }
     const bytes = b64ToBytes(r.data)
     if (ext === 'md' || ext === 'markdown' || ext === 'txt' || ext === 'html' || ext === 'htm' || ext === 'csv') {
@@ -1600,22 +1600,22 @@
         ? '<span class="about-dot bad"></span><span class="about-bad">Storage not accessible</span>'
         : '<span class="about-dot"></span><span>Checking…</span>'
     const banner = ok === false
-      ? '<div class="about-banner bad"><b>Local storage is not available</b><small>Documents/ZenOffice could not be read. Check the storage permission of the app.</small></div>'
+      ? '<div class="about-banner bad"><b>Local storage is not available</b><small>Documents/Andi Kore Office could not be read. Check the storage permission of the app.</small></div>'
       : '<div class="about-banner' + (ok ? '' : ' wait') + '"><b>' + (ok ? 'Local storage is accessible' : 'Checking local storage…') + '</b><small>Your documents are stored locally on this device.</small></div>'
     const theme = state.theme === 'dark' ? 'Dark' : state.theme === 'light' ? 'Light' : 'System default'
     const lang = readAndroid('lang', null)
     const nFiles = state.files.length
     return '<div class="about-page">' +
-      '<div class="about-hero"><img src="./shim/assets/zenoffice-logo.png" alt="" /><div>' +
-      '<h1>ZenOffice</h1><div class="about-tag">Your Office, Reimagined</div>' +
+      '<div class="about-hero"><span class="ak-badge" style="width:84px;height:84px;border-radius:20px;font-size:34px">AK</span><div>' +
+      '<h1>Andi Kore Office</h1><div class="about-tag">Your Office, Reimagined</div>' +
       '<p>A powerful and modern office suite for Android. Create, edit, and manage your documents, spreadsheets, and presentations, anytime, anywhere.</p></div></div>' +
       '<div class="about-grid">' +
       '<section class="about-card"><h2>' + ico('info') + 'App Information</h2>' +
-      kv('App Name', 'ZenOffice') + kv('Version', APP_VERSION) + kv('Platform', escapeHtml(am ? 'Android ' + am[1] : 'Android')) +
+      kv('App Name', 'Andi Kore Office') + kv('Version', APP_VERSION) + kv('Platform', escapeHtml(am ? 'Android ' + am[1] : 'Android')) +
       kv('WebView', escapeHtml(cm ? 'Chrome ' + cm[1] : 'unknown')) + kv('Package Name', APP_PACKAGE) +
       kv('Status', '<span class="about-status">' + status + '</span>') + '</section>' +
       '<section class="about-card"><h2>' + ico('folder') + 'Local Workspace</h2>' +
-      infoRow('folder', 'Storage Location', 'Documents/ZenOffice') +
+      infoRow('folder', 'Storage Location', 'Documents/Andi Kore Office') +
       infoRow('file', 'Document Files', nFiles + (nFiles === 1 ? ' file' : ' files'), 'data-view="files"', true) +
       infoRow('save', 'Total Size', formatBytes(total)) +
       infoRow('refresh', 'Recent List', state.recents.length + (state.recents.length === 1 ? ' item' : ' items')) +
@@ -1633,13 +1633,13 @@
       maintCard('refresh', 'Reload Application', 'Restart the app to apply changes.', 'reload', 'Reload') +
       '</div></section>' +
       '<div class="about-grid about-grid-2">' +
-      '<section class="about-card"><h2>' + ico('code') + 'Open Source &amp; Credits</h2><p class="about-sub">ZenOffice uses and builds upon several open source projects.</p>' +
+      '<section class="about-card"><h2>' + ico('code') + 'Open Source &amp; Credits</h2><p class="about-sub">Andi Kore Office uses and builds upon several open source projects.</p>' +
       infoRow('shield', 'Third-party Licenses', 'View licenses for included components', 'data-about="licenses"', true) +
       infoRow('heart', 'Special Thanks', 'To all contributors and open source projects', 'data-about="thanks"', true) + '</section>' +
-      '<section class="about-card"><h2>' + ico('info') + 'About ZenOffice</h2>' +
-      '<p class="about-text">ZenOffice is an Android port of GenOffice, brought to mobile for a more flexible and productive experience. This is an independent project and is not affiliated with, endorsed by, or officially connected to GenOffice or its original developers.</p>' +
+      '<section class="about-card"><h2>' + ico('info') + 'About Andi Kore Office</h2>' +
+      '<p class="about-text">Andi Kore Office is a rebrand of the ZenOffice Android port of GenOffice, brought to mobile for a more flexible and productive experience. This is an independent project and is not affiliated with, endorsed by, or officially connected to GenOffice or its original developers.</p>' +
       '<p class="about-text about-small">Based on GenOffice, Copyright 2026 Mainfunc, Inc., licensed under the Apache License 2.0. Changes: Android port, rename and interface adaptations.</p>' +
-      '<div class="about-foot"><img src="./shim/assets/zenoffice-logo.png" alt="" /><b>ZenOffice</b><span>Your Office, Reimagined</span></div></section>' +
+      '<div class="about-foot"><span class="ak-badge" style="width:26px;height:26px;border-radius:6px;font-size:11px">AK</span><b>Andi Kore Office</b><span>Your Office, Reimagined</span></div></section>' +
       '</div></div>'
   }
 
@@ -1722,7 +1722,7 @@
     await createTab({ app: app, name: file.name, file: file, fileBlobId: fileBlobId })
   }
 
-  // open-with-intent: files other apps hand to ZenOffice (Open with / ACTION_VIEW)
+  // open-with-intent: files other apps hand to Andi Kore Office (Open with / ACTION_VIEW)
   async function openFileObject(file) {
     const app = appForName(file.name)
     if (!app) {
@@ -1834,9 +1834,9 @@
     try {
       let result
       try {
-        result = await fs.readdir({ path: 'ZenOffice', directory: 'DOCUMENTS' })
+        result = await fs.readdir({ path: 'Andi Kore Office', directory: 'DOCUMENTS' })
       } catch (e) {
-        await fs.mkdir({ path: 'ZenOffice', directory: 'DOCUMENTS', recursive: true })
+        await fs.mkdir({ path: 'Andi Kore Office', directory: 'DOCUMENTS', recursive: true })
         result = { files: [] }
       }
       state.files = (result.files || [])
@@ -1999,7 +1999,7 @@
     state.view = view
     closePopover()
     if (state.active !== 'home') {
-      // called from a document tab: switch to the ZenOffice home tab, which renders the view
+      // called from a document tab: switch to the Andi Kore Office home tab, which renders the view
       activateTab('home')
       if (view === 'files') refreshFiles()
       return
@@ -2287,9 +2287,9 @@
   setTimeout(async function () {
     denied = !(await granted())
     if (!denied) return
-    var KEY = 'zenoffice.storageAsked.v1'
+    var KEY = 'andikore.storageAsked.v1'
     try { if (localStorage.getItem(KEY)) return; localStorage.setItem(KEY, '1') } catch (e) {}
-    if (window.confirm('ZenOffice needs "All files access" to list documents that other apps or your file manager put in Documents/ZenOffice. Files stay on your device. Open settings now?')) {
+    if (window.confirm('Andi Kore Office needs "All files access" to list documents that other apps or your file manager put in Documents/Andi Kore Office. Files stay on your device. Open settings now?')) {
       try { await plugin().requestStorageAccess() } catch (e) {}
     }
   }, 1500)
