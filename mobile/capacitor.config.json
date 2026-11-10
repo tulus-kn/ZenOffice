@@ -1,6 +1,6 @@
 {
-  "appId": "com.minhaj.zenoffice",
-  "appName": "ZenOffice",
+  "appId": "com.andikore.office",
+  "appName": "Andi Kore Office",
   "webDir": "www",
   "android": {
     "allowMixedContent": false
