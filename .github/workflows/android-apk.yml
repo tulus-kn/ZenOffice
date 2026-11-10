@@ -68,6 +68,9 @@ jobs:
       - name: Build renderers as web apps
         run: node mobile/scripts/build-web.mjs
 
+      - name: Obfuscate web assets
+        run: node mobile/scripts/obfuscate-web.mjs
+
       - name: Create Android project
         working-directory: mobile
         run: |
