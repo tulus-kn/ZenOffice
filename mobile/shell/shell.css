@@ -1072,6 +1072,50 @@ svg {
   background: var(--surface-hover);
 }
 
+.donate-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: min(100%, 340px);
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.donate-box:hover {
+  background: var(--surface-hover);
+}
+
+.donate-title {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.donate-account {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+
+.donate-name {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.donate-hint {
+  margin-top: 4px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
 /* ── Settings / about ────────────────────────────────────────────────────── */
 
 .settings-card {

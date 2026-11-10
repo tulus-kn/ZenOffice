@@ -9,6 +9,9 @@
   const ACTIVE_KEY = LS + 'active.v2'
   const THEME_KEY = LS + 'theme.v1'
 
+  // Kotak donasi di layar utama — rekening Mandiri user (dari foto Livin' 2026-11-10).
+  const DONATE = { bank: 'Mandiri', number: '1270 0136 1371 4', name: 'NOVIANDI ARIYANTO DJAMI KORE' }
+
   const APP_META = {
     docs: { title: 'Docs', sub: '.docx', icon: 'file-docx.png' },
     sheets: { title: 'Sheets', sub: '.xlsx', icon: 'file-xlsx.png' },
@@ -1086,6 +1089,13 @@
               ? '<button class="secondary-btn" type="button" data-clear-filters>Clear filters</button>'
               : '<button class="primary-btn" type="button" data-open-local>Open a file</button>'
           }
+          ${searching || starred ? '' : `
+          <button class="donate-box" type="button" data-copy-account="${DONATE.number.replace(/\s/g, '')}">
+            <span class="donate-title">Donasi Seikhlasnya</span>
+            <span class="donate-account">${DONATE.bank} · ${DONATE.number}</span>
+            <span class="donate-name">a.n. ${DONATE.name}</span>
+            <span class="donate-hint">Ketuk untuk menyalin nomor rekening</span>
+          </button>`}
         </div>`
       return
     }
@@ -2090,6 +2100,18 @@
     }
   })
 
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    try { document.execCommand('copy') } catch (e) { /* abaikan */ }
+    document.body.removeChild(ta)
+    if (done) done()
+  }
+
   document.addEventListener('click', function (event) {
     const nav = event.target.closest('[data-view]')
     if (nav) {
@@ -2121,6 +2143,22 @@
     if (more) {
       event.stopPropagation()
       showFileMenu(more.dataset.more, more)
+      return
+    }
+
+    const donate = event.target.closest('[data-copy-account]')
+    if (donate) {
+      const num = donate.dataset.copyAccount
+      const done = () => {
+        const hint = donate.querySelector('.donate-hint')
+        if (hint) {
+          hint.textContent = 'Nomor rekening disalin ✓'
+          setTimeout(() => { hint.textContent = 'Ketuk untuk menyalin nomor rekening' }, 2000)
+        }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num).then(done, () => fallbackCopy(num, done))
+      } else fallbackCopy(num, done)
       return
     }
 
