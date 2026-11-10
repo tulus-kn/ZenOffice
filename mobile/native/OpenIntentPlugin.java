@@ -1,4 +1,4 @@
-package com.example.genoffice;
+package com.andikore.office;
 
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * "Open with": files other apps hand to ZenOffice (ACTION_VIEW). The content://
+ * "Open with": files other apps hand to Andi Kore Office (ACTION_VIEW). The content://
  * stream is only readable for a short time, so it is copied into the app cache
  * and JS picks the copies up with takePending().
  */

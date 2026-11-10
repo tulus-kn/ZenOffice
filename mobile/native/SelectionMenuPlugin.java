@@ -1,4 +1,4 @@
-package com.example.genoffice;
+package com.andikore.office;
 
 import android.app.SearchManager;
 import android.content.ClipData;
@@ -31,7 +31,7 @@ import java.io.InputStream;
 /**
  * Menangkap toolbar seleksi teks native (Cut/Copy/Paste/Select all/Web search/
  * Share/Autofill/Translate...) dan mengirim daftar itemnya ke JS, tanpa
- * menampilkan toolbar native. Klik item di menu ZenOffice memanggil item native
+ * menampilkan toolbar native. Klik item di menu Andi Kore Office memanggil item native
  * yang sama (invoke), jadi Paste memakai jalur native yang terbukti jalan.
  *
  * Default NONAKTIF: toolbar native tetap normal sampai JS memanggil

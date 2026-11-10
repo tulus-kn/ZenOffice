@@ -1,4 +1,4 @@
-package com.example.genoffice;
+package com.andikore.office;
 
 import android.content.Context;
 import android.os.Build;
@@ -97,7 +97,7 @@ public class PdfExportPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             try {
                 final WebView wv = getBridge().getWebView();
-                final PrintDocumentAdapter adapter = wv.createPrintDocumentAdapter("ZenOffice");
+                final PrintDocumentAdapter adapter = wv.createPrintDocumentAdapter("Andi Kore Office");
                 final PrintAttributes attrs = attributes(w, h);
                 new Handler(Looper.getMainLooper()).postDelayed(
                         () -> run(call, adapter, attrs, null), delay);
@@ -148,7 +148,7 @@ public class PdfExportPlugin extends Plugin {
                     public void onPageFinished(WebView view, String url) {
                         if (!started.compareAndSet(false, true)) return;
                         new Handler(Looper.getMainLooper()).postDelayed(
-                                () -> run(call, wv.createPrintDocumentAdapter("ZenOffice"), attrs, wv), printDelayMs);
+                                () -> run(call, wv.createPrintDocumentAdapter("Andi Kore Office"), attrs, wv), printDelayMs);
                     }
                 });
                 wv.loadDataWithBaseURL(baseUrl, html, "text/html", "utf-8", null);
@@ -186,7 +186,7 @@ public class PdfExportPlugin extends Plugin {
     public void printSystem(final PluginCall call) {
         final String html = call.getString("html", "");
         final String baseUrl = call.getString("baseUrl", "https://localhost/");
-        final String jobName = call.getString("jobName", "ZenOffice");
+        final String jobName = call.getString("jobName", "Andi Kore Office");
         final int printDelayMs = call.getInt("delayMs", 700);
         final double w = call.getDouble("widthIn", 8.27);
         final double h = call.getDouble("heightIn", 11.69);
