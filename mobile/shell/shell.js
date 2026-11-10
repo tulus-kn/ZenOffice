@@ -433,7 +433,7 @@
     const home = `
       <div class="tab tab-home ${state.active === 'home' ? 'active' : ''}${homeFx.cls}"${homeFx.style} role="tab"
            tabindex="0" aria-selected="${state.active === 'home'}" data-tab="home">
-        <span class="tab-icon tab-icon-home ak-badge" style="font-size:8px">AK</span>
+        <img class="tab-icon tab-icon-home" src="./shim/assets/zenoffice-logo.png" alt="" />
         <span class="tab-title">Andi Kore Office</span>
       </div>`
 
@@ -1606,7 +1606,7 @@
     const lang = readAndroid('lang', null)
     const nFiles = state.files.length
     return '<div class="about-page">' +
-      '<div class="about-hero"><span class="ak-badge" style="width:84px;height:84px;border-radius:20px;font-size:34px">AK</span><div>' +
+      '<div class="about-hero"><img src="./shim/assets/zenoffice-logo.png" alt="" /><div>' +
       '<h1>Andi Kore Office</h1><div class="about-tag">Your Office, Reimagined</div>' +
       '<p>A powerful and modern office suite for Android. Create, edit, and manage your documents, spreadsheets, and presentations, anytime, anywhere.</p></div></div>' +
       '<div class="about-grid">' +
@@ -1639,7 +1639,7 @@
       '<section class="about-card"><h2>' + ico('info') + 'About Andi Kore Office</h2>' +
       '<p class="about-text">Andi Kore Office is a rebrand of the ZenOffice Android port of GenOffice, brought to mobile for a more flexible and productive experience. This is an independent project and is not affiliated with, endorsed by, or officially connected to GenOffice or its original developers.</p>' +
       '<p class="about-text about-small">Based on GenOffice, Copyright 2026 Mainfunc, Inc., licensed under the Apache License 2.0. Changes: Android port, rename and interface adaptations.</p>' +
-      '<div class="about-foot"><span class="ak-badge" style="width:26px;height:26px;border-radius:6px;font-size:11px">AK</span><b>Andi Kore Office</b><span>Your Office, Reimagined</span></div></section>' +
+      '<div class="about-foot"><img src="./shim/assets/zenoffice-logo.png" alt="" /><b>Andi Kore Office</b><span>Your Office, Reimagined</span></div></section>' +
       '</div></div>'
   }
 

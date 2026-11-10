@@ -445,7 +445,6 @@ svg {
   background: var(--surface-hover);
 }
 
-.ak-badge{display:inline-grid;place-items:center;background:linear-gradient(180deg,#3b82f6,#1d4ed8);color:#fff;font-weight:800;font-family:system-ui,sans-serif;flex:none}
 
 .brand-mark {
   width: 22px;
