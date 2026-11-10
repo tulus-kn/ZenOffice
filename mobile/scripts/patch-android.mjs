@@ -20,7 +20,7 @@ const mobileDir = resolve(here, '..')
 const androidDir = join(mobileDir, 'android')
 const javaPath = join(
   androidDir,
-  'app/src/main/java/com/example/genoffice/MainActivity.java',
+  'app/src/main/java/com/andikore/office/MainActivity.java',
 )
 const stylesPath = join(androidDir, 'app/src/main/res/values/styles.xml')
 
@@ -29,7 +29,7 @@ if (!existsSync(join(androidDir, 'app'))) {
   process.exit(1)
 }
 
-const mainActivity = `package com.example.genoffice;
+const mainActivity = `package com.andikore.office;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -75,7 +75,7 @@ public class MainActivity extends BridgeActivity {
         OpenIntentPlugin.enqueue(this, intent);
     }
 
-    /** Toolbar seleksi native dialihkan ke menu ZenOffice (hanya saat plugin diaktifkan JS). */
+    /** Toolbar seleksi native dialihkan ke menu Andi Kore Office (hanya saat plugin diaktifkan JS). */
     @Override
     public ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int type) {
         SelectionMenuPlugin p = SelectionMenuPlugin.instance;
@@ -161,10 +161,10 @@ writeFileSync(javaPath, mainActivity)
 const nativeDir = join(mobileDir, 'native')
 const javaRoot = join(androidDir, 'app/src/main/java')
 for (const [name, target] of [
-  ['PdfExportPlugin.java', join(javaRoot, 'com/example/genoffice/PdfExportPlugin.java')],
+  ['PdfExportPlugin.java', join(javaRoot, 'com/andikore/office/PdfExportPlugin.java')],
   ['PdfPrintHelper.java', join(javaRoot, 'android/print/PdfPrintHelper.java')],
-  ['SelectionMenuPlugin.java', join(javaRoot, 'com/example/genoffice/SelectionMenuPlugin.java')],
-  ['OpenIntentPlugin.java', join(javaRoot, 'com/example/genoffice/OpenIntentPlugin.java')],
+  ['SelectionMenuPlugin.java', join(javaRoot, 'com/andikore/office/SelectionMenuPlugin.java')],
+  ['OpenIntentPlugin.java', join(javaRoot, 'com/andikore/office/OpenIntentPlugin.java')],
 ]) {
   mkdirSync(dirname(target), { recursive: true })
   copyFileSync(join(nativeDir, name), target)
@@ -184,7 +184,7 @@ if (iconAttrs.length > 0) {
   writeFileSync(manifestPath, manifest)
 }
 
-// Launch theme: dark window + ZenOffice splash icon (res/values*/zen_launch.xml come from native/res).
+// Launch theme: dark window + Andi Kore Office splash icon (res/values*/zen_launch.xml come from native/res).
 {
   let m = readFileSync(manifestPath, 'utf8')
   const next = m.replace(/<activity\b[^>]*android:name="\.MainActivity"[^>]*>/, (tag) =>
@@ -243,7 +243,7 @@ console.log('Android immersive display patch applied.')
   }
 }
 
-// "Open with": ACTION_VIEW filters so file managers list ZenOffice (idempotent).
+// "Open with": ACTION_VIEW filters so file managers list Andi Kore Office (idempotent).
 {
   let m = readFileSync(manifestPath, 'utf8')
   if (!m.includes('genoffice-open-with')) {
@@ -270,7 +270,7 @@ console.log('Android immersive display patch applied.')
   }
 }
 
-// All-files access so Documents/ZenOffice lists files other apps put there (idempotent).
+// All-files access so Documents/Andi Kore Office lists files other apps put there (idempotent).
 {
   let m = readFileSync(manifestPath, 'utf8')
   if (!m.includes('MANAGE_EXTERNAL_STORAGE')) {
@@ -282,7 +282,7 @@ console.log('Android immersive display patch applied.')
   }
 }
 
-// ZenOffice release build: signing, version, namespace pin and default splash.
+// Andi Kore Office release build: signing, version, namespace pin and default splash.
 // Idempotent, so a clean `npx cap add android` still builds the same app.
 {
   const gradlePath = join(androidDir, 'app/build.gradle')
@@ -293,7 +293,7 @@ console.log('Android immersive display patch applied.')
       "apply plugin: 'com.android.application'\n",
       "apply plugin: 'com.android.application'\n\n" +
         'def ksProps = new Properties()\n' +
-        'def ksPath = System.getenv("ZENOFFICE_KEYSTORE_PROPS") ?: (System.getProperty("user.home") + "/keys/keystore.properties")\n' +
+        'def ksPath = System.getenv("ANDIKORE_KEYSTORE_PROPS") ?: (System.getProperty("user.home") + "/keys/keystore.properties")\n' +
         'def ksFile = new File(ksPath)\n' +
         'if (ksFile.exists()) ksProps.load(new FileInputStream(ksFile))\n',
     )
@@ -317,7 +317,7 @@ console.log('Android immersive display patch applied.')
         '            signingConfig signingConfigs.release\n',
     )
   }
-  g = g.replace(/namespace\s+"[^"]*"/, 'namespace "com.example.genoffice"')
+  g = g.replace(/namespace\s+"[^"]*"/, 'namespace "com.andikore.office"')
   g = g.replace(/versionName\s+"[^"]*"/, 'versionName "0.1.0-beta"')
   if (g !== orig) {
     writeFileSync(gradlePath, g)

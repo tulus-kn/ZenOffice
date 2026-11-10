@@ -53,7 +53,7 @@ cpSync(
   join(mobileDir, 'node_modules/jszip/dist/jszip.min.js'),
   join(wwwDir, 'shim/jszip.min.js'),
 )
-// ZenOffice ribbon skin (Docs only, linked in the html below).
+// Andi Kore Office ribbon skin (Docs only, linked in the html below).
 cpSync(join(mobileDir, 'shim/zen-ribbon.css'), join(wwwDir, 'shim/zen-ribbon.css'))
 cpSync(join(mobileDir, 'shim/zen-card.css'), join(wwwDir, 'shim/zen-card.css'))
 cpSync(join(mobileDir, 'shim/zen-tab-anim.js'), join(wwwDir, 'shim/zen-tab-anim.js'))
