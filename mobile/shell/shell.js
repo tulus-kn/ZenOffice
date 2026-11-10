@@ -9,8 +9,12 @@
   const ACTIVE_KEY = LS + 'active.v2'
   const THEME_KEY = LS + 'theme.v1'
 
-  // Kotak donasi di layar utama — rekening Mandiri user (dari foto Livin' 2026-11-10).
-  const DONATE = { bank: 'Mandiri', number: '1270 0136 1371 4', name: 'Noviandi A. Dj. Kore' }
+  // Kotak donasi di layar utama.
+  // Donation details are stored encoded so they are not readable as plain
+  // text inside the built app. Decoded at runtime; this stops casual
+  // snooping only, it is not encryption.
+  const _dx = (s) => new TextDecoder().decode(Uint8Array.from(atob(s), (c) => c.charCodeAt(0)))
+  const DONATE = { bank: _dx('TWFuZGlyaQ=='), number: _dx('MTI3MCAwMTM2IDEzNzEgNA=='), name: _dx('Tm92aWFuZGkgQS4gRGouIEtvcmU='), title: _dx('RG9uYXNpIFNlaWtobGFzbnlh'), hint: _dx('S2V0dWsgdW50dWsgbWVueWFsaW4gbm9tb3IgcmVrZW5pbmc='), copied: _dx('Tm9tb3IgcmVrZW5pbmcgZGlzYWxpbiDinJM=') }
 
   const APP_META = {
     docs: { title: 'Docs', sub: '.docx', icon: 'file-docx.png' },
@@ -1091,10 +1095,10 @@
           }
           ${searching || starred ? '' : `
           <button class="donate-box" type="button" data-copy-account="${DONATE.number.replace(/\s/g, '')}">
-            <span class="donate-title">Donasi Seikhlasnya</span>
+            <span class="donate-title">${DONATE.title}</span>
             <span class="donate-account">${DONATE.bank} · ${DONATE.number}</span>
             <span class="donate-name">a.n. ${DONATE.name}</span>
-            <span class="donate-hint">Ketuk untuk menyalin nomor rekening</span>
+            <span class="donate-hint">${DONATE.hint}</span>
           </button>`}
         </div>`
       return
@@ -2152,8 +2156,8 @@
       const done = () => {
         const hint = donate.querySelector('.donate-hint')
         if (hint) {
-          hint.textContent = 'Nomor rekening disalin ✓'
-          setTimeout(() => { hint.textContent = 'Ketuk untuk menyalin nomor rekening' }, 2000)
+          hint.textContent = DONATE.copied
+          setTimeout(() => { hint.textContent = DONATE.hint }, 2000)
         }
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
