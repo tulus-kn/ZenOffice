@@ -10,7 +10,7 @@
   const THEME_KEY = LS + 'theme.v1'
 
   // Kotak donasi di layar utama — rekening Mandiri user (dari foto Livin' 2026-11-10).
-  const DONATE = { bank: 'Mandiri', number: '1270 0136 1371 4', name: 'NOVIANDI ARIYANTO DJAMI KORE' }
+  const DONATE = { bank: 'Mandiri', number: '1270 0136 1371 4', name: 'Noviandi A. Dj. Kore' }
 
   const APP_META = {
     docs: { title: 'Docs', sub: '.docx', icon: 'file-docx.png' },
