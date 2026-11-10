@@ -1,8 +1,8 @@
 {
-  "name": "genoffice-mobile",
+  "name": "andi-kore-office-mobile",
   "version": "0.1.0",
   "private": true,
-  "description": "Capacitor Android wrapper for the GenOffice renderers",
+  "description": "Capacitor Android wrapper for the Andi Kore Office renderers",
   "license": "Apache-2.0",
   "scripts": {
     "build:web": "node scripts/build-web.mjs",

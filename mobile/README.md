@@ -1,4 +1,4 @@
-# GenOffice untuk Android
+# Andi Kore Office untuk Android
 
 Membungkus renderer GenOffice (Docs, Sheets, Slides, PDF, Markdown, HTML) sebagai web app di dalam
 WebView Android memakai [Capacitor](https://capacitorjs.com). Electron tidak ada di Android, jadi
@@ -30,7 +30,7 @@ Sudah diverifikasi di perangkat Android 16 (arm64, SDK 36) dengan APK debug ±40
 - AI: tidak ada entry point yang terlihat di Docs, Sheets, maupun Slides; menu kontekstual AI
   (Synonyms/Translate) dan grup Review Translate ikut disembunyikan.
 
-File disimpan di `Documents/GenOffice/`. AutoSave default-nya **aktif** karena belum ada dialog
+File disimpan di `Documents/Andi Kore Office/`. AutoSave default-nya **aktif** karena belum ada dialog
 "simpan sebelum keluar"; matikan lewat tombol AutoSave di tiap app bila perlu.
 
 | App | Buka | Simpan | Catatan |
@@ -145,7 +145,7 @@ CI di x86_64 tidak butuh trik ini.
   path disimpan otomatis. Deck baru tanpa path memakai Save/Save As untuk menentukan nama file.
 - Save As memakai `window.prompt` bawaan WebView untuk nama file.
 - APK masih debug-signed. Untuk distribusi, buat keystore release dan ganti `appId`/`appName` di
-  `mobile/capacitor.config.json` (sekarang `com.example.genoffice`).
+  `mobile/capacitor.config.json` (sekarang `com.andikore.office`).
 
 ## Lisensi
 
@@ -164,16 +164,16 @@ Status: jalan di Docs, Sheets, Slides, Markdown (HTML tidak dipakai).
 - Batasan: font tidak di-embed ke DOCX/PPTX/XLSX (hanya nama); metrik Slides heuristik; font Markdown hanya tampilan editor; file font yang ditaruh manual via Termux bisa tidak terbaca app (beda owner), gunakan Add font...
 
 
-## Status 2026-10-30: context menu ZenOffice (Android)
+## Status 2026-10-30: context menu Andi Kore Office (Android)
 
 - APK: mobile/android/app/build/outputs/apk/debug/app-debug.apk
 - SHA-256: eb9931f718c529c8631dcb02d19c17cc467074755a8ecac89faa5c848ff76333
 - Branch: rename-zenoffice
-- Toolbar seleksi native Android dialihkan ke menu ZenOffice lewat plugin SelectionMenu (default nonaktif, hanya aktif saat jari menyentuh editor Docs). Paste, Paste as Plain Text, Select all, Search, Share memakai clipboard/Intent native.
-- Klik kanan mouse: menu sistem diblok (preventDefault) di Android. Long-press sentuh: kata terblok native lalu menu ZenOffice.
+- Toolbar seleksi native Android dialihkan ke menu Andi Kore Office lewat plugin SelectionMenu (default nonaktif, hanya aktif saat jari menyentuh editor Docs). Paste, Paste as Plain Text, Select all, Search, Share memakai clipboard/Intent native.
+- Klik kanan mouse: menu sistem diblok (preventDefault) di Android. Long-press sentuh: kata terblok native lalu menu Andi Kore Office.
 - Menu bergaya Word (ikon kiri, shortcut kanan, baris Paste Options) dan mini toolbar (font/ukuran, A+/A-, painter, komentar, B/I/U, highlight, warna font, bullet, nomor, Styles). Semua digate window.__genofficeAndroidShim; Electron tidak berubah.
 - Dites di device (kamu): tap menu, paste, Select all, Search, Share, toolbar mini, klik kanan mouse, long-press kata.
-- Batasan: Autofill dan item pihak ketiga (Translate) tidak ikut menu ZenOffice. Label baru (Paste Options:, Search, Select all, Share, tooltip toolbar) masih Inggris tetap, belum i18n. Kotak font membaca atribut docTextStyle secara heuristik (nama berisi font/family/ascii) dan bisa kosong di dokumen tertentu. Warna highlight dan font mengikuti warna pena ribbon, tanpa palet di menu.
+- Batasan: Autofill dan item pihak ketiga (Translate) tidak ikut menu Andi Kore Office. Label baru (Paste Options:, Search, Select all, Share, tooltip toolbar) masih Inggris tetap, belum i18n. Kotak font membaca atribut docTextStyle secara heuristik (nama berisi font/family/ascii) dan bisa kosong di dokumen tertentu. Warna highlight dan font mengikuti warna pena ribbon, tanpa palet di menu.
 
 ## Handoff 2026-10-31: zoom smoothness (branch zoom-perf)
 
@@ -191,10 +191,10 @@ Belum / masalah terbuka:
 - Aturan: jangan commit di branch lain; cek `git branch --show-current` sebelum commit (ada sesi AI lain di repo yang sama).
 ## Status 2026-10-31: menu "+" ala WPS, tab bar
 
-- Tombol "+" sekarang di kanan tab terakhir dan membuka popup New (Docs, Sheets, Slides, PDF, Markdown, HTML, Open local file). Tiga titik kanan dihapus, "Close other tabs" ada di menu tiga garis kiri. Tab ZenOffice selebar logo dan nama.
+- Tombol "+" sekarang di kanan tab terakhir dan membuka popup New (Docs, Sheets, Slides, PDF, Markdown, HTML, Open local file). Tiga titik kanan dihapus, "Close other tabs" ada di menu tiga garis kiri. Tab Andi Kore Office selebar logo dan nama.
 - Branch: main (kode di commit da4e180)
 - SHA-256 APK debug: 872978488f358e1e393b493c83aaee1916a99b073f2e38059b0278512376e9e3
-- Dites manual di device (kamu): popup, penempatan "+", tab ZenOffice, menu kiri.
+- Dites manual di device (kamu): popup, penempatan "+", tab Andi Kore Office, menu kiri.
 - Batasan: commit da4e180 ditulis AI lain dan belum ada test otomatis. Kerjaan zoom-perf dan pdf-converter belum selesai dan tidak termasuk APK ini.
 
 
