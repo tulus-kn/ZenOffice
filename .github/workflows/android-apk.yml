@@ -12,7 +12,10 @@ on:
 
 jobs:
   apk:
-    runs-on: ubuntu-latest
+    # ubuntu-latest kini Ubuntu 26 dan setup-android di image itu gagal
+    # mengambil paket platforms;android-35 ("Failed to find package").
+    # Pakai ubuntu-24.04 yang sudah terbukti jalan untuk workflow ini.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
