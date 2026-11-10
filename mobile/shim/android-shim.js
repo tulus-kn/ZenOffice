@@ -30,7 +30,7 @@
   if (window.__zenMaxPasses === undefined) window.__zenMaxPasses = 3
 
   var LS = 'genoffice.android.'
-  var DIR = 'ZenOffice'
+  var DIR = 'Andi Kore Office'
   var LANGS = ['zh', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'th', 'id', 'ru', 'ar']
   var UNSUPPORTED = { ok: false, error: 'Not supported on Android yet' }
 
@@ -662,7 +662,7 @@
   window.__zenNative = { call: zenNativeCall }
 
   // Toolbar seleksi native hanya dimatikan saat jari menyentuh editor dokumen
-  // (menu ZenOffice menggantikannya); di app lain tetap normal.
+  // (menu Andi Kore Office menggantikannya); di app lain tetap normal.
   document.addEventListener(
     'pointerdown',
     function () {
@@ -683,7 +683,7 @@
   function nativePrint(options) {
     return new Promise(function (resolve, reject) {
       if (!isEmbedded()) {
-        reject(new Error('Native PDF export requires the ZenOffice shell'))
+        reject(new Error('Native PDF export requires the Andi Kore Office shell'))
         return
       }
       var id = 'print_' + Date.now().toString(36) + '_' + ++printSeq
@@ -1061,7 +1061,7 @@
     return s.slice(s.lastIndexOf('/') + 1) || 'Untitled'
   }
 
-  /** Map any path the desktop app hands us to a relative Documents/ZenOffice path. */
+  /** Map any path the desktop app hands us to a relative Documents/Andi Kore Office path. */
   function documentPath(pathOrName) {
     var s = String(pathOrName || '').replace(/\\/g, '/').replace(/^\/+/, '')
     if (s.indexOf(DIR + '/') === 0 && s.indexOf('..') < 0) return s
@@ -1104,7 +1104,7 @@
     return p.dir + p.stem + '-' + Date.now() + p.ext
   }
 
-  /** Writes into Documents/ZenOffice/<name>; returns the stored relative path. */
+  /** Writes into Documents/Andi Kore Office/<name>; returns the stored relative path. */
   async function writeDocument(relOrName, data, options) {
     var fs = filesystem()
     if (!fs) throw new Error('Filesystem plugin unavailable (not running inside the Android app)')
@@ -1248,7 +1248,7 @@
 
   // ---------- persistent file blobs for recent files ----------
   // Stores file blobs with a persistent ID so they can be reopened from recents
-  // even if the original file is outside Documents/ZenOffice.
+  // even if the original file is outside Documents/Andi Kore Office.
 
   async function putFileBlob(file) {
     var id = 'blob_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8)
@@ -2777,7 +2777,7 @@
           method: 'printSystem',
           html: html,
           baseUrl: location.href,
-          jobName: (document.title || 'ZenOffice').slice(0, 60),
+          jobName: (document.title || 'Andi Kore Office').slice(0, 60),
           widthIn: widthIn,
           heightIn: heightIn,
           duplex: job && job.duplex ? job.duplex : 'simplex',
@@ -3988,7 +3988,7 @@
     }
 
     // Add Android stubs for slides export
-    // zen-slides-pdf: HTML berhalaman (seperti pdf-export.ts desktop) -> native printHtml -> Documents/ZenOffice -> tab baru
+    // zen-slides-pdf: HTML berhalaman (seperti pdf-export.ts desktop) -> native printHtml -> Documents/Andi Kore Office -> tab baru
     slidesWrapped.exportPdf = async function (request) {
       try {
         var req = request || {}
@@ -4121,7 +4121,7 @@
       var F = window.__genofficeFonts
       return { families: F ? await F.installLocal() : [] }
     }
-    slidesWrapped.pickExportDir = async function() { return 'Documents/ZenOffice' }
+    slidesWrapped.pickExportDir = async function() { return 'Documents/Andi Kore Office' }
     slidesWrapped.pickExportPdfPath = async function(defaultName) { return String(defaultName || 'Slides.pdf') }
 
     window.slidesApi = slidesWrapped
@@ -4547,12 +4547,12 @@
     }
   })()
 
-  // ---------- brand: show ZenOffice in window/tab titles ----------
+  // ---------- brand: show Andi Kore Office in window/tab titles ----------
   ;(function brandTitle() {
     if (typeof document === 'undefined' || !window.MutationObserver) return
     function fix() {
       var t = document.title
-      if (t && t.indexOf('GenOffice') >= 0) document.title = t.replace(/GenOffice/g, 'ZenOffice')
+      if (t && t.indexOf('GenOffice') >= 0) document.title = t.replace(/GenOffice/g, 'Andi Kore Office')
     }
     fix()
     new MutationObserver(fix).observe(document.head || document.documentElement, {
@@ -4653,7 +4653,7 @@
         lastSig = sig
         lastChange = now
       }
-      var name = queryPath ? baseName(queryPath) : /^ZenOffice/.test(document.title || '') ? '' : document.title
+      var name = queryPath ? baseName(queryPath) : /^Andi Kore Office/.test(document.title || '') ? '' : document.title
       if (name && titleEl) titleEl.textContent = 'Opening ' + name + '…'
       if (subEl && cfg.large && now - t0 > 15000) subEl.textContent = 'Preparing pages and word count (large document, ' + Math.round((now - t0) / 1000) + 's)'
       var hasDoc = cfg.docs
