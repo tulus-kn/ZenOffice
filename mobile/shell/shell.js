@@ -1023,6 +1023,21 @@
     return 'Recent'
   }
 
+  // Donation box: always visible at the bottom of the home screen,
+  // whether or not there are recent files. It used to live only in the
+  // empty state, so it vanished as soon as a file existed.
+  function donateBoxHtml() {
+    return `
+      <div class="donate-sticky">
+        <button class="donate-box" type="button" data-copy-account="${DONATE.number.replace(/\s/g, '')}">
+          <span class="donate-title">${DONATE.title}</span>
+          <span class="donate-account">${DONATE.bank} · ${DONATE.number}</span>
+          <span class="donate-name">a.n. ${DONATE.name}</span>
+          <span class="donate-hint">${DONATE.hint}</span>
+        </button>
+      </div>`
+  }
+
   function renderHome() {
     applyTheme()
     const navItems = document.querySelectorAll('[data-view]')
@@ -1058,7 +1073,8 @@
           </div>
         </div>
         <div id="file-list"></div>
-      </section>`
+      </section>` +
+      donateBoxHtml()
 
     const search = $('#file-search')
     if (search) {
@@ -1100,13 +1116,6 @@
               ? '<button class="secondary-btn" type="button" data-clear-filters>Clear filters</button>'
               : '<button class="primary-btn" type="button" data-open-local>Open a file</button>'
           }
-          ${searching || starred ? '' : `
-          <button class="donate-box" type="button" data-copy-account="${DONATE.number.replace(/\s/g, '')}">
-            <span class="donate-title">${DONATE.title}</span>
-            <span class="donate-account">${DONATE.bank} · ${DONATE.number}</span>
-            <span class="donate-name">a.n. ${DONATE.name}</span>
-            <span class="donate-hint">${DONATE.hint}</span>
-          </button>`}
         </div>`
       return
     }
@@ -1152,7 +1161,7 @@
 
   const PREFS_KEY = LS + 'prefs.v1'
   const ANDROID_LS = 'genoffice.android.'
-  const APP_VERSION = '0.1.1-beta' // keep in sync with versionName in android/app/build.gradle
+  const APP_VERSION = '0.1.2-beta' // keep in sync with versionName in android/app/build.gradle
   const APP_PACKAGE = 'com.andikore.office' // applicationId
   const LANG_NAMES = {
     zh: '中文', en: 'English', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch',
