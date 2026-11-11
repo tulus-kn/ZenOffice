@@ -1094,6 +1094,21 @@ svg {
   background: var(--surface-hover);
 }
 
+/* Donation box stays pinned at the bottom of the home screen, files or not. */
+.donate-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 16px;
+  background: linear-gradient(to bottom, transparent, var(--bg-content) 45%);
+}
+
+.donate-sticky .donate-box {
+  margin-top: 0;
+}
+
 .donate-title {
   font-size: 13px;
   font-weight: 650;
