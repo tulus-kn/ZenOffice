@@ -1161,7 +1161,7 @@
 
   const PREFS_KEY = LS + 'prefs.v1'
   const ANDROID_LS = 'genoffice.android.'
-  const APP_VERSION = '0.1.3-beta' // keep in sync with versionName in android/app/build.gradle
+  const APP_VERSION = '0.1.4-beta' // keep in sync with versionName in android/app/build.gradle
   const APP_PACKAGE = 'com.andikore.office' // applicationId
   const LANG_NAMES = {
     zh: '中文', en: 'English', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch',
