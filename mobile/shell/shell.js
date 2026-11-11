@@ -40,6 +40,9 @@
     htm: 'html',
   }
 
+  // Legacy / foreign spreadsheet containers we can read and hand over as .xlsx
+  const IMPORT_EXTS = { xls: 1, xlsb: 1, ods: 1, numbers: 1 }
+
   const NEW_DEFS = {
     docx: { app: 'docs', name: 'Untitled.docx' },
     xlsx: { app: 'sheets', name: 'Untitled.xlsx' },
@@ -910,6 +913,10 @@
       tab.pending = false
       tab.newKind = ''
       if (data.type === 'saved') tab.dirty = false
+      if (data.type === 'saved' && data.macro) toast('Macro workbook saved · VBA, ribbon and buttons preserved')
+      if (data.type === 'opened' && /\.xlsm$/i.test(tab.path || tab.name || '')) {
+        toast('Macro workbook · tap Makro to run Sub/Function on this device')
+      }
       recordRecent({ path: tab.path, name: tab.name, app: tab.app, size: data.size, fileBlobId: tab.fileBlobId })
       renderTabs()
       persistTabs()
@@ -1145,7 +1152,7 @@
 
   const PREFS_KEY = LS + 'prefs.v1'
   const ANDROID_LS = 'genoffice.android.'
-  const APP_VERSION = '0.1.0-beta' // keep in sync with versionName in android/app/build.gradle
+  const APP_VERSION = '0.1.1-beta' // keep in sync with versionName in android/app/build.gradle
   const APP_PACKAGE = 'com.andikore.office' // applicationId
   const LANG_NAMES = {
     zh: '中文', en: 'English', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch',
@@ -1203,17 +1210,38 @@
   async function probeStorage() {
     const fs = fsPlugin()
     let ok = false
+    let perm = 'unknown'
     if (fs) {
+      if (fs.checkPermissions) {
+        try {
+          const status = await fs.checkPermissions()
+          perm = status && status.publicStorage ? status.publicStorage : 'unknown'
+        } catch (e) { perm = 'unknown' }
+      }
+      // The folder may simply not exist yet on a fresh install, which is not
+      // the same as "storage blocked". Create it, then read it back.
       try {
-        await fs.stat({ path: 'Andi Kore Office', directory: 'DOCUMENTS' })
-        ok = true
+        await fs.mkdir({ path: 'Andi Kore Office', directory: 'DOCUMENTS', recursive: true }).catch(function () {})
+        const listing = await fs.readdir({ path: 'Andi Kore Office', directory: 'DOCUMENTS' })
+        ok = !!(listing && listing.files)
       } catch (e) {
         ok = false
       }
     }
-    const changed = state.storageOk !== ok
+    const changed = state.storageOk !== ok || state.storagePerm !== perm
     state.storageOk = ok
+    state.storagePerm = perm
     if (changed && state.view === 'about') renderHome()
+  }
+
+  async function requestStoragePermission() {
+    const fs = fsPlugin()
+    if (!fs) return
+    try {
+      if (fs.requestPermissions) await fs.requestPermissions()
+    } catch (e) { /* the system dialog may be unavailable; probe again anyway */ }
+    await probeStorage()
+    renderHome()
   }
 
   // dialogs
@@ -1385,11 +1413,102 @@
     } else if (kind === 'thanks') {
       openDialog(
         '<h3>Special thanks</h3><div class="zen-modal-body"><ul>' +
+        '<li>Minhaj, author of ZenOffice, the Android port this build is derived from.</li>' +
         '<li>Mainfunc, Inc. and the GenOffice contributors, whose open source work this app is built on.</li>' +
         '<li>The Capacitor project, which makes the Android wrapper possible.</li>' +
         '<li>SheetJS, ExcelJS and every open source library and font bundled with the renderers.</li></ul></div>' +
         '<div class="zen-modal-actions"><button class="secondary-btn" type="button" data-zen-close>Close</button></div>',
       )
+    }
+  }
+
+  // AI Assistant: the user brings their own Gemini key; it stays on this device.
+  const AI_KEY_STORE = 'tkn_ai_key'
+  const AI_MODEL_STORE = 'tkn_ai_model'
+  const AI_DEFAULT_MODEL = 'gemini-3.8-flash'
+
+  function readAiKey() {
+    try { return localStorage.getItem(AI_KEY_STORE) || '' } catch (e) { return '' }
+  }
+  const AI_RETIRED_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-001', 'gemini-1.5-flash']
+  function readAiModel() {
+    let stored = AI_DEFAULT_MODEL
+    try { stored = localStorage.getItem(AI_MODEL_STORE) || AI_DEFAULT_MODEL } catch (e) {}
+    // Model lama yang sudah dipensiunkan Google diganti otomatis.
+    if (AI_RETIRED_MODELS.indexOf(stored) >= 0) return AI_DEFAULT_MODEL
+    return stored
+  }
+  function writeAiKey(key, model) {
+    try {
+      localStorage.setItem(AI_KEY_STORE, String(key || '').trim())
+      localStorage.setItem(AI_MODEL_STORE, String(model || AI_DEFAULT_MODEL).trim() || AI_DEFAULT_MODEL)
+      return true
+    } catch (e) { return false }
+  }
+  function maskKey(key) {
+    if (!key) return 'Belum diatur'
+    if (key.length <= 8) return '••••'
+    return key.slice(0, 4) + '…' + key.slice(-4)
+  }
+
+  function showAiKeyDialog() {
+    const key = readAiKey()
+    const model = readAiModel()
+    const html =
+      '<div class="zen-modal-head"><div><h2 style="margin:0;font-size:16px">AI Assistant</h2>' +
+      '<div style="color:#6b7280;font-size:12px">Kunci API Gemini — disimpan hanya di perangkat ini</div></div>' +
+      '<button class="zen-modal-x" type="button" data-zen-close>×</button></div>' +
+      '<div class="ai-key-body">' +
+      '<label class="ai-key-label">Kunci API (Google AI Studio)</label>' +
+      '<input class="ai-key-input" type="password" id="ai-key-field" placeholder="AIza…" value="' + escapeHtml(key) + '" autocomplete="off" spellcheck="false" />' +
+      '<div class="ai-key-hint">Dapatkan gratis di aistudio.google.com → “Get API key”. Kunci tidak pernah dikirim ke server mana pun; panel AI memanggil Gemini langsung dari HP Anda.</div>' +
+      '<label class="ai-key-label">Model</label>' +
+      '<input class="ai-key-input" type="text" id="ai-model-field" placeholder="' + AI_DEFAULT_MODEL + '" value="' + escapeHtml(model) + '" spellcheck="false" />' +
+      '<div class="ai-key-row">' +
+      '<button class="zc-btn zc-save" type="button" data-ai-action="save">Simpan</button>' +
+      (key ? '<button class="zc-btn zc-discard" type="button" data-ai-action="clear">Hapus kunci</button>' : '') +
+      '<button class="zc-btn zc-cancel" type="button" data-ai-action="test">Uji koneksi</button>' +
+      '</div>' +
+      '<div class="ai-key-result" id="ai-key-result"></div>' +
+      '</div>'
+    openDialog(html)
+    const field = document.getElementById('ai-key-field')
+    if (field) field.focus()
+  }
+
+  async function testAiKey() {
+    const out = document.getElementById('ai-key-result')
+    const keyField = document.getElementById('ai-key-field')
+    const modelField = document.getElementById('ai-model-field')
+    const key = (keyField && keyField.value || '').trim()
+    const model = (modelField && modelField.value || '').trim() || AI_DEFAULT_MODEL
+    if (!out) return
+    if (!key) { out.textContent = 'Isi kunci API lebih dulu.'; return }
+    out.textContent = 'Menguji…'
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+      encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key)
+    const payload = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] })
+    async function post(contentType) {
+      return fetch(url, { method: 'POST', headers: { 'Content-Type': contentType }, body: payload })
+    }
+    try {
+      let response
+      try {
+        response = await post('application/json')
+      } catch (first) {
+        response = await post('text/plain;charset=UTF-8')
+      }
+      const data = await response.json()
+      if (!response.ok) {
+        out.textContent = 'Gagal: ' + ((data && data.error && data.error.message) || ('HTTP ' + response.status))
+        return
+      }
+      const text = (((data.candidates || [])[0] || {}).content || {}).parts || []
+      out.textContent = 'Berhasil — model menjawab: ' + (text.map(function (p) { return p.text || '' }).join('').trim() || '(kosong)')
+    } catch (e) {
+      const online = typeof navigator !== 'undefined' && navigator.onLine === false
+      out.textContent = 'Tidak bisa menghubungi Gemini: ' + String((e && e.message) || e) +
+        (online ? ' — HP sedang offline.' : ' — periksa internet HP; sebagian jaringan memblokir generativelanguage.googleapis.com.')
     }
   }
 
@@ -1399,6 +1518,41 @@
       handlePref(pref.dataset.pref)
       return
     }
+    const tbRow = event.target.closest('[data-tb-reset]')
+    if (tbRow) {
+      try { localStorage.removeItem('tkn_terbilang_mode') } catch (e) {}
+      renderHome()
+      return
+    }
+    const aiRow = event.target.closest('[data-ai="key"]')
+    if (aiRow) { showAiKeyDialog(); return }
+    const aiAction = event.target.closest('[data-ai-action]')
+    if (aiAction) {
+      const action = aiAction.dataset.aiAction
+      if (action === 'save') {
+        const key = (document.getElementById('ai-key-field') || {}).value || ''
+        const model = (document.getElementById('ai-model-field') || {}).value || AI_DEFAULT_MODEL
+        const ok = writeAiKey(key, model)
+        const out = document.getElementById('ai-key-result')
+        if (out) out.textContent = ok ? 'Kunci disimpan di perangkat ini.' : 'Gagal menyimpan kunci.'
+        if (ok) setTimeout(function () { closeDialog(); renderHome() }, 700)
+      } else if (action === 'clear') {
+        try { localStorage.removeItem(AI_KEY_STORE) } catch (e) {}
+        const out = document.getElementById('ai-key-result')
+        if (out) out.textContent = 'Kunci dihapus.'
+        setTimeout(function () { closeDialog(); renderHome() }, 600)
+      } else if (action === 'test') {
+        void testAiKey()
+      }
+      return
+    }
+    const fix = event.target.closest('[data-action="fix-storage"]')
+    if (fix) {
+      void requestStoragePermission()
+      return
+    }
+    const skillBtn = event.target.closest('[data-skill]')
+    if (skillBtn) { showSkillDialog(skillBtn.dataset.skill); return }
     const info = event.target.closest('[data-about]')
     if (info) {
       showAboutDialog(info.dataset.about)
@@ -1601,6 +1755,127 @@
       '<button class="secondary-btn" type="button" data-command="' + command + '">' + button + '</button></div></div>'
   }
 
+  // ── bundled skills ──────────────────────────────────────────────────────
+  function skillsList() {
+    return (window.__TKN_SKILLS || []).slice()
+  }
+
+  function renderSkillMarkdown(md) {
+    const lines = String(md || '').replace(/\r\n/g, '\n').split('\n')
+    const out = []
+    let para = []
+    let list = null
+    let table = []
+    let code = null
+
+    function inline(text) {
+      return escapeHtml(text)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+        .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+    }
+    function flushPara() {
+      if (para.length) {
+        out.push('<p>' + inline(para.join(' ')) + '</p>')
+        para = []
+      }
+    }
+    function flushList() {
+      if (list) {
+        out.push('<ul>' + list.map(function (item) { return '<li>' + inline(item) + '</li>' }).join('') + '</ul>')
+        list = null
+      }
+    }
+    function flushTable() {
+      if (table.length) {
+        out.push('<div class="skill-table">' + table.map(function (row) {
+          const cells = row.split('|').slice(1, -1).map(function (c) { return c.trim() })
+          return '<div class="skill-tr">' + cells.map(function (c, i) {
+            return '<span class="skill-td' + (i === 0 ? ' skill-td-key' : '') + '">' + inline(c) + '</span>'
+          }).join('') + '</div>'
+        }).join('') + '</div>')
+        table = []
+      }
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (code !== null) {
+        if (/^\s*```/.test(line)) {
+          out.push('<pre class="skill-code">' + escapeHtml(code.join('\n')) + '</pre>')
+          code = null
+        } else {
+          code.push(line)
+        }
+        continue
+      }
+      if (/^\s*```/.test(line)) {
+        flushPara(); flushList(); flushTable()
+        code = []
+        continue
+      }
+      if (/^\s*\|/.test(line)) {
+        if (/^\s*\|[\s:|-]+\|\s*$/.test(line)) continue
+        flushPara(); flushList()
+        table.push(line.trim())
+        continue
+      }
+      flushTable()
+      const h = /^(#{1,3})\s+(.*)$/.exec(line)
+      if (h) {
+        flushPara(); flushList()
+        const level = h[1].length
+        out.push('<h' + (level + 3) + ' class="skill-h">' + inline(h[2]) + '</h' + (level + 3) + '>')
+        continue
+      }
+      if (/^\s*[-*]\s+/.test(line)) {
+        flushPara()
+        if (!list) list = []
+        list.push(line.replace(/^\s*[-*]\s+/, ''))
+        continue
+      }
+      if (/^\s*>\s?/.test(line)) {
+        flushPara(); flushList()
+        out.push('<p class="skill-note">' + inline(line.replace(/^\s*>\s?/, '')) + '</p>')
+        continue
+      }
+      if (!line.trim()) {
+        flushPara(); flushList()
+        continue
+      }
+      flushList()
+      para.push(line.trim())
+    }
+    if (code !== null) out.push('<pre class="skill-code">' + escapeHtml(code.join('\n')) + '</pre>')
+    flushPara(); flushList(); flushTable()
+    return out.join('')
+  }
+
+  function showSkillDialog(id) {
+    const skill = skillsList().filter(function (s) { return s.id === id })[0]
+    if (!skill) return
+    openDialog(
+      '<h3>' + escapeHtml(skill.title) + '</h3>' +
+      '<div class="zen-modal-body skill-body">' +
+      '<p class="about-sub">' + escapeHtml(skill.source) + ' · ' + escapeHtml(skill.license) + ' · dibundel offline</p>' +
+      renderSkillMarkdown(skill.body) +
+      '<p class="skill-note">Skrip Python milik skill ini (mis. <code>scripts/recalc.py</code>) tidak dijalankan di Android — hanya panduannya yang dibundel.</p>' +
+      '</div>' +
+      '<div class="zen-modal-actions"><button class="secondary-btn" type="button" data-zen-close>Close</button></div>',
+    )
+  }
+
+  function skillSectionHtml() {
+    const skills = skillsList()
+    if (!skills.length) return ''
+    return '<section class="about-card about-wide"><h2>' + ico('code') + 'Built-in Skills</h2>' +
+      '<p class="about-sub">Panduan kerja yang dibundel di dalam aplikasi, bisa dibaca offline.</p>' +
+      skills.map(function (s) {
+        return infoRow('code', escapeHtml(s.title), escapeHtml(s.summary), 'data-skill="' + escapeHtml(s.id) + '"', true)
+      }).join('') +
+      '</section>'
+  }
+
   function renderAbout() {
     if (state.storageOk === undefined) void probeStorage()
     const total = state.files.reduce(function (sum, f) { return sum + (Number(f.size) || 0) }, 0)
@@ -1614,7 +1889,11 @@
         ? '<span class="about-dot bad"></span><span class="about-bad">Storage not accessible</span>'
         : '<span class="about-dot"></span><span>Checking…</span>'
     const banner = ok === false
-      ? '<div class="about-banner bad"><b>Local storage is not available</b><small>Documents/Andi Kore Office could not be read. Check the storage permission of the app.</small></div>'
+      ? '<div class="about-banner bad"><b>Local storage is not available</b><small>Documents/Andi Kore Office could not be read. Allow file access for Andi Kore Office, then tap the button below.</small>' +
+        (state.storagePerm === 'denied' || state.storagePerm === 'prompt' || state.storagePerm === 'unknown'
+          ? '<button class="about-fix" type="button" data-action="fix-storage">Minta izin penyimpanan</button>'
+          : '<button class="about-fix" type="button" data-action="fix-storage">Periksa ulang izin</button>') +
+        '</div>'
       : '<div class="about-banner' + (ok ? '' : ' wait') + '"><b>' + (ok ? 'Local storage is accessible' : 'Checking local storage…') + '</b><small>Your documents are stored locally on this device.</small></div>'
     const theme = state.theme === 'dark' ? 'Dark' : state.theme === 'light' ? 'Light' : 'System default'
     const lang = readAndroid('lang', null)
@@ -1639,6 +1918,9 @@
       prefRow('lang', 'globe', 'Language', lang ? (LANG_NAMES[lang] || lang) : 'System default') +
       prefRow('preview', 'eye', 'File Preview', prefs.preview ? 'On' : 'Off') +
       prefRow('format', 'file', 'Default Format', FORMAT_LABELS[prefs.format]) + '</section>' +
+      '<section class="about-card"><h2>' + ico('code') + 'AI Assistant</h2>' +
+      infoRow('key', 'Gemini API key', readAiKey() ? (maskKey(readAiKey()) + ' · ' + readAiModel()) : 'Belum diatur', 'data-ai="key"', true) +
+      '<p class="about-sub">Bawa kunci Anda sendiri. Panel AI di Spreadsheet memanggil Gemini langsung dari perangkat; kunci tidak dikirim ke server mana pun.</p></section>' +
       '</div>' +
       '<section class="about-card about-wide"><h2>' + ico('wrench') + 'Maintenance</h2><p class="about-sub">Manage your app data and performance.</p>' +
       '<div class="about-maint-grid">' +
@@ -1646,6 +1928,24 @@
       maintCard('trash', 'Clear Recent Files', 'Remove your recent file history.', 'clear-recents', 'Clear') +
       maintCard('refresh', 'Reload Application', 'Restart the app to apply changes.', 'reload', 'Reload') +
       '</div></section>' +
+      '<section class="about-card about-wide"><h2>' + ico('info') + 'Known Limitations</h2><p class="about-sub">What this Android build does not do — stated plainly, so nothing surprises you later.</p>' +
+      infoRow('grid', 'Excel charts, pivot tables, conditional formatting, slicers', 'Restored on save: charts, pivot tables and caches, slicers, drawings and conditional formatting are copied back from the original file. If the merge cannot be validated the file is saved exactly as the engine wrote it') +
+      infoRow('mouse', 'ActiveX controls', 'Parts and control definitions are carried over, but ActiveX buttons still do not run code') +
+      infoRow('file', 'Legacy formats', '.doc and .ppt are still not supported. Spreadsheets in old or foreign containers — .xls, .xlsb, .ods, .numbers — are converted to .xlsx when you open them, so you can read and edit the data; any macros inside those files are NOT carried over by the conversion') +
+      infoRow('print', 'Printing on Android', 'Not available yet — the print action reports “not supported”') +
+      infoRow('spark', 'AI panel', 'Available in Spreadsheet: bring your own Gemini key (Tentang → AI Assistant). Without a key the panel only explains how to add one') +
+      infoRow('cloud', 'Cloud &amp; real-time collaboration', 'Offline only: no cloud sync, no co-editing like Google Docs or Office 365') +
+      infoRow('code', 'Formulas', 'Common functions work, but very new or rare Excel functions may be missing or return a different result') +
+      infoRow('grid', 'Mode TERBILANG', (function () {
+        try {
+          const m = localStorage.getItem('tkn_terbilang_mode')
+          return m === 'right' ? 'Tulis di kolom kanan' : (m === 'replace' ? 'Ganti di sel' : 'Tanya setiap kali')
+        } catch (e) { return 'Tanya setiap kali' }
+      })(), 'data-tb-reset', true) +
+      infoRow('grid', 'TERBILANG', 'Built in: the Terbilang button turns selected numbers (or =TERBILANG(A1) text) into Indonesian words; macros can also call Terbilang(x)') +
+      infoRow('code', 'VBA macros', 'On Error, Set, For Each, GoTo/labels, Select Case, Err and Application flags now run. Still unsupported: UserForms (no runtime), Declare DLL, file I/O, chart/table object methods, and buttons are still driven from the Makro panel rather than drawn on the sheet') +
+      '</section>' +
+      skillSectionHtml() +
       '<div class="about-grid about-grid-2">' +
       '<section class="about-card"><h2>' + ico('code') + 'Open Source &amp; Credits</h2><p class="about-sub">Andi Kore Office uses and builds upon several open source projects.</p>' +
       infoRow('shield', 'Third-party Licenses', 'View licenses for included components', 'data-about="licenses"', true) +
@@ -1660,7 +1960,69 @@
   // ── opening files ────────────────────────────────────────────────────────
 
   function supportedAccept() {
-    return '.docx,.xlsx,.xlsm,.csv,.pptx,.odp,.pdf,.md,.markdown,.txt,.html,.htm'
+    return '.docx,.xlsx,.xlsm,.csv,.xls,.xlsb,.ods,.numbers,.pptx,.odp,.pdf,.md,.markdown,.txt,.html,.htm'
+  }
+
+  let xlsxLibPromise = null
+
+  function loadXlsxLib() {
+    if (window.XLSX && typeof window.XLSX.read === 'function') return Promise.resolve(window.XLSX)
+    if (xlsxLibPromise) return xlsxLibPromise
+    xlsxLibPromise = new Promise(function (resolve, reject) {
+      try {
+        const script = document.createElement('script')
+        script.src = './shim/xlsx.full.min.js'
+        script.async = true
+        script.onload = function () {
+          if (window.XLSX && typeof window.XLSX.read === 'function') resolve(window.XLSX)
+          else reject(new Error('Spreadsheet reader did not load'))
+        }
+        script.onerror = function () { reject(new Error('Spreadsheet reader did not load')) }
+        document.head.appendChild(script)
+      } catch (e) {
+        reject(e)
+      }
+    })
+    return xlsxLibPromise
+  }
+
+  // Convert .xls / .xlsb / .ods / .numbers into an in-memory .xlsx so the rest of
+  // the app (which only speaks OOXML) can open it. Macros inside legacy files are
+  // not carried over by this path — the converter only keeps values and formulas.
+  async function importLegacySpreadsheet(file) {
+    const ext = extension(file.name)
+    if (!IMPORT_EXTS[ext]) return file
+    let wb = null
+    try {
+      const XLSX = await loadXlsxLib()
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      wb = XLSX.read(bytes, { type: 'array', cellDates: true, cellNF: true })
+    } catch (e) {
+      console.warn('[import] could not read ' + file.name, e)
+      toast('Could not read ' + file.name + ' (.' + ext + ')')
+      return null
+    }
+    if (!wb || !wb.SheetNames || !wb.SheetNames.length) {
+      toast('No sheets found in ' + file.name)
+      return null
+    }
+    let out = null
+    try {
+      out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    } catch (e) {
+      console.warn('[import] could not convert ' + file.name, e)
+      toast('Could not convert ' + file.name + ' to .xlsx')
+      return null
+    }
+    const base = file.name.replace(/\.(xls|xlsb|ods|numbers)$/i, '')
+    const converted = new File([out], base + '.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    converted._importedFrom = '.' + ext
+    converted._importedSheets = wb.SheetNames.length
+    console.log('[import] converted', file.name, '->', converted.name, wb.SheetNames.length + ' sheet(s)')
+    toast('Dibuka sebagai .xlsx (asli .' + ext + ' · ' + wb.SheetNames.length + ' sheet)')
+    return converted
   }
 
   function pickFileFallback(accept) {
@@ -1716,6 +2078,11 @@
       return
     }
     console.log('[openLocalFile] File picked:', file.name, file.size, file.type)
+    if (IMPORT_EXTS[extension(file.name)]) {
+      const converted = await importLegacySpreadsheet(file)
+      if (!converted) return
+      file = converted
+    }
     const app = appForName(file.name)
     if (!app) {
       toast('This file type is not supported yet')
@@ -1738,6 +2105,11 @@
 
   // open-with-intent: files other apps hand to Andi Kore Office (Open with / ACTION_VIEW)
   async function openFileObject(file) {
+    if (IMPORT_EXTS[extension(file.name)]) {
+      const converted = await importLegacySpreadsheet(file)
+      if (!converted) return
+      file = converted
+    }
     const app = appForName(file.name)
     if (!app) {
       toast('This file type is not supported yet')
