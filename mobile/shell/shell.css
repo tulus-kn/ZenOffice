@@ -1565,7 +1565,7 @@ html.genoffice-print-mode .app {
   }
 }
 
-/* ── ZenOffice about / preferences / preview ─────────────────────────────── */
+/* ── Andi Kore Office about / preferences / preview ─────────────────────────────── */
 
 .about-page { display: flex; flex-direction: column; gap: 16px; max-width: 1180px; }
 .about-hero { display: flex; align-items: center; gap: 18px; padding: 6px 2px 4px; }
@@ -1728,7 +1728,7 @@ button.about-row:hover { background: var(--surface-hover); }
   #home-view.view-enter .about-hero, #home-view.view-enter .about-card { animation: none !important; }
 }
 
-/* ZenOffice: tab bar mengikuti gradasi biru (terang/gelap) */
+/* Andi Kore Office: tab bar mengikuti gradasi biru (terang/gelap) */
 .tabbar { background: linear-gradient(180deg, #ececef 0%, #e6e7e9 100%); border-bottom-color: rgb(0 0 0 / 14%); }
 .tab.active { background: #ffffff; border-color: rgb(0 0 0 / 14%); }
 [data-theme='dark'] .tabbar { background: #111216; border-bottom-color: rgb(255 255 255 / 14%); }
@@ -1785,3 +1785,44 @@ button.about-row:hover { background: var(--surface-hover); }
 html.zen-windowed { --safe-top: 0px; }
 .tabbar-leading { display: flex !important; }
 .tabbar-menu { display: grid !important; }
+
+/* bundled skill viewer */
+.skill-body{max-height:60vh;overflow:auto}
+.skill-body .skill-h{font-size:15px;margin:14px 0 6px}
+.skill-body h5.skill-h{font-size:14px}
+.skill-body h6.skill-h{font-size:13px;color:var(--muted,#666)}
+.skill-body p{margin:6px 0;line-height:1.5}
+.skill-body ul{margin:6px 0 6px 18px;padding:0}
+.skill-body li{margin:3px 0;line-height:1.45}
+.skill-body code{background:rgba(127,127,127,.14);border-radius:4px;padding:1px 4px;font-size:12px}
+.skill-body pre.skill-code{background:rgba(127,127,127,.12);border-radius:8px;padding:8px 10px;overflow:auto;font-size:12px;line-height:1.45}
+.skill-body .skill-note{color:var(--muted,#666);font-size:12px;border-left:3px solid rgba(127,127,127,.35);padding-left:8px}
+.skill-body .skill-table{border:1px solid rgba(127,127,127,.25);border-radius:8px;overflow:hidden;margin:8px 0}
+.skill-body .skill-tr{display:flex;border-top:1px solid rgba(127,127,127,.18)}
+.skill-body .skill-tr:first-child{border-top:0;background:rgba(127,127,127,.1)}
+.skill-body .skill-td{flex:1;padding:6px 8px;font-size:12px;line-height:1.4}
+.skill-body .skill-td-key{font-weight:600;flex:0 0 38%}
+
+/* About: storage permission action */
+.about-fix {
+  margin-top: 10px;
+  border: 0;
+  background: #0a2e96;
+  color: #fff;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font: 600 13px/1 -apple-system, Roboto, sans-serif;
+  cursor: pointer;
+}
+.about-fix:active { opacity: .82; }
+
+/* About: AI key dialog */
+.ai-key-body { padding: 4px 2px 2px; }
+.ai-key-label { display: block; font-weight: 600; font-size: 12px; color: #374151; margin: 12px 0 6px; }
+.ai-key-input {
+  width: 100%; box-sizing: border-box; border: 1px solid #e1e5ec; border-radius: 9px;
+  padding: 10px; font: 400 13px/1.3 -apple-system, Roboto, sans-serif; color: #111827; background: #fff;
+}
+.ai-key-hint { color: #6b7280; font-size: 11.5px; line-height: 1.5; margin-top: 6px; }
+.ai-key-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.ai-key-result { margin-top: 10px; font-size: 12px; color: #374151; white-space: pre-wrap; }
