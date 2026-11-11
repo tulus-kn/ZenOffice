@@ -573,9 +573,14 @@
     }
   }
 
-  function notifySaved(path, size) {
+  function notifySaved(path, size, macro) {
     if (!path) return
-    notifyShell('saved', { path: path, name: baseName(path), size: Number(size) || 0 })
+    notifyShell('saved', {
+      path: path,
+      name: baseName(path),
+      size: Number(size) || 0,
+      macro: !!macro,
+    })
   }
 
   // Expose notifyShell for apps to use
@@ -1403,6 +1408,12 @@
     return name
   }
 
+  /** Replace (rather than append) the extension, keeping any parent folder. */
+  function forceExtension(name, ext) {
+    var parts = splitExt(name)
+    return parts.dir + parts.stem + ext
+  }
+
   // ---------- generic defaults shared by all apps ----------
 
   var common = {
@@ -2106,6 +2117,216 @@
     })
   }
 
+  async function ensureVbaRunner() {
+    if (window.__zenVbaMacros) return
+    if (!window.__zenVbaRunnerLoading) {
+      window.__zenVbaRunnerLoading = loadScript('../shim/vba-run.js').catch(function (e) {
+        console.warn('[genoffice] VBA runner unavailable', e)
+      })
+    }
+    await window.__zenVbaRunnerLoading
+  }
+
+  function currentMacroSession() {
+    var ids = Object.keys(xlsxSessions)
+    for (var i = ids.length - 1; i >= 0; i--) {
+      var candidate = xlsxSessions[ids[i]]
+      if (candidate && candidate.bytes && candidate.bytes.byteLength) return candidate
+    }
+    return null
+  }
+
+  function columnName(col) {
+    var letters = ''
+    var n = col
+    while (n > 0) {
+      var rem = (n - 1) % 26
+      letters = String.fromCharCode(65 + rem) + letters
+      n = Math.floor((n - 1) / 26)
+    }
+    return letters
+  }
+
+  // Macros read and write the live Univer sheet, so a run is immediately
+  // visible and the normal snapshot-based save persists it. No divergence.
+  function liveMacroAdapter() {
+    var api = window.__univerAPI
+    var workbook = api && api.getActiveWorkbook && api.getActiveWorkbook()
+    if (!workbook) throw new Error('Spreadsheet belum siap')
+    var names = workbook.getSheets().map(function (sheet) { return sheet.getSheetName() })
+    var changes = []
+    var byKey = Object.create(null)
+    function address(row, col) { return columnName(col) + row }
+    function sheetFor(name) {
+      var sheet = workbook.getSheetByName(name)
+      if (!sheet) throw new Error('Sheet tidak ditemukan: ' + name)
+      return sheet
+    }
+    return {
+      sheetNames: names,
+      activeSheet: workbook.getActiveSheet().getSheetName(),
+      changes: changes,
+      getCell: function (sheet, row, col) {
+        var target = workbook.getSheetByName(sheet)
+        if (!target) return null
+        var value = target.getRange(address(row, col)).getValue()
+        return value === undefined ? null : value
+      },
+      setCell: function (sheet, row, col, value) {
+        var target = sheetFor(sheet)
+        target.getRange(address(row, col)).setValue(value === null || value === undefined ? '' : value)
+        var key = sheet + '!' + row + ':' + col
+        if (!byKey[key]) {
+          byKey[key] = { sheet: sheet, row: row, col: col, address: address(row, col) }
+          changes.push(byKey[key])
+        }
+        byKey[key].value = value
+      },
+    }
+  }
+
+  async function listMacros() {
+    var session = currentMacroSession()
+    if (!session) return { ok: false, error: 'Tidak ada workbook terbuka' }
+    await ensureVbaRunner()
+    if (!window.__zenVbaMacros) return { ok: false, error: 'Runner VBA tidak tersedia' }
+    try {
+      var list = window.__zenVbaMacros.listProcedures(session.bytes)
+      var buttons = []
+      try {
+        await ensureVbaPreserver()
+        if (window.__zenVba && window.__zenVba.readFormButtons) {
+          buttons = await window.__zenVba.readFormButtons(session.bytes)
+        }
+      } catch (e) {
+        console.warn('[genoffice] could not read form buttons', e)
+      }
+      var activeX = []
+      try {
+        if (window.__zenVba && window.__zenVba.readActiveXControls) {
+          var controls = await window.__zenVba.readActiveXControls(session.bytes)
+          var known = Object.create(null)
+          list.procedures.forEach(function (p) { known[p.name.toLowerCase()] = true })
+          activeX = controls.map(function (control) {
+            var handler = control.name + '_Click'
+            return {
+              name: control.name,
+              shapeId: control.shapeId,
+              handler: handler,
+              hasHandler: !!known[handler.toLowerCase()],
+            }
+          })
+        }
+      } catch (e) {
+        console.warn('[genoffice] could not read ActiveX controls', e)
+      }
+      return {
+        ok: true,
+        modules: list.modules,
+        macros: list.procedures,
+        buttons: buttons,
+        activeX: activeX,
+        name: session.file.name,
+      }
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) }
+    }
+  }
+
+  async function runMacro(name) {
+    var session = currentMacroSession()
+    if (!session) return { ok: false, error: 'Tidak ada workbook terbuka' }
+    await ensureVbaRunner()
+    if (!window.__zenVbaMacros) return { ok: false, error: 'Runner VBA tidak tersedia' }
+    var adapter
+    try {
+      adapter = liveMacroAdapter()
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) }
+    }
+    try {
+      // Module-level variables (Public rRange, bFlag, ...) live for as long
+      // as the workbook stays open, exactly like a real Excel session.
+      if (!session.macroState) session.macroState = {}
+      var result = window.__zenVbaMacros.runMacro(name, adapter, {
+        bytes: session.bytes,
+        maxSteps: 200000,
+        state: session.macroState,
+      })
+      notifyShell('dirty', { dirty: true })
+      return {
+        ok: true,
+        name: result.name,
+        output: result.output,
+        steps: result.steps,
+        changes: result.changes,
+      }
+    } catch (e) {
+      return {
+        ok: false,
+        error: String((e && e.message) || e),
+        code: e.code || '',
+        line: e.line || 0,
+        changes: adapter.changes || [],
+      }
+    }
+  }
+
+  window.__genofficeMacros = { list: listMacros, run: runMacro }
+  window.__genofficeMountMacroUi = mountMacroUi
+
+  // Checks from the bundled xlsx skill, run against the SheetJS workbook the
+  // session already holds (no recalculation, no external service).
+  async function runSheetCheck() {
+    var session = currentMacroSession()
+    if (!session) return { ok: false, error: 'Tidak ada workbook terbuka' }
+    if (!window.__tknSheetCheck) {
+      try {
+        await loadScript('../shim/sheet-check.js')
+      } catch (e) {
+        return { ok: false, error: 'Pemeriksa tidak tersedia' }
+      }
+    }
+    if (!window.__tknSheetCheck) return { ok: false, error: 'Pemeriksa tidak tersedia' }
+    return window.__tknSheetCheck.inspect(session.wb, session.names)
+  }
+  window.__genofficeCheck = { run: runSheetCheck }
+
+  function mountMacroUi() {
+    if (!/\/sheets\//.test(window.location.pathname)) return
+    if (window.__zenMacroUiMounted) return
+    window.__zenMacroUiMounted = true
+    loadScript('../shim/macro-ui.js').catch(function (e) {
+      console.warn('[genoffice] macro panel unavailable', e)
+    })
+    loadScript('../shim/sheet-check.js').catch(function (e) {
+      console.warn('[genoffice] sheet checker unavailable', e)
+    })
+    loadScript('../shim/terbilang.js').then(function () {
+      if (window.__tknTerbilang && window.__tknTerbilang.mountUi) window.__tknTerbilang.mountUi()
+    }).catch(function (e) {
+      console.warn('[genoffice] terbilang unavailable', e)
+    })
+    loadScript('../shim/ai-panel.js').then(function () {
+      if (window.__tknAi && window.__tknAi.mountUi) window.__tknAi.mountUi()
+    }).catch(function (e) {
+      console.warn('[genoffice] AI panel unavailable', e)
+    })
+  }
+
+  async function ensureVbaPreserver() {
+    if (window.__zenVba && window.JSZip) return
+    if (!window.__zenVbaLoading) {
+      window.__zenVbaLoading = (async function () {
+        if (!window.JSZip) await loadScript('../shim/jszip.min.js')
+        await loadScript('../shim/vba-preserve.js')
+      })().catch(function (e) {
+        console.warn('[genoffice] macro preservation module unavailable', e)
+      })
+    }
+    await window.__zenVbaLoading
+  }
+
   async function ensureExcelJS() {
     if (window.ExcelJS) return
     if (!window.__genofficeExcelJSLoading) {
@@ -2136,6 +2357,19 @@
         session.bytes.byteOffset,
         session.bytes.byteOffset + session.bytes.byteLength,
       )
+      // Macro workbooks can carry VML drawing parts (form-control buttons,
+      // legacy comments) that ExcelJS cannot parse and that make the whole
+      // save throw. Hand it a VML-free copy; session.bytes keeps the original
+      // byte image so the parts are restored after the engine has written.
+      await ensureVbaPreserver()
+      if (window.__zenVba && window.__zenVba.prepareEngineBytes) {
+        try {
+          var safe = await window.__zenVba.prepareEngineBytes(new Uint8Array(base))
+          base = safe.buffer.slice(safe.byteOffset, safe.byteOffset + safe.byteLength)
+        } catch (e) {
+          console.warn('[genoffice] could not prepare engine bytes', e)
+        }
+      }
       await workbook.xlsx.load(base)
     } else {
       workbook.addWorksheet('Sheet1')
@@ -2491,12 +2725,26 @@
       try {
         var targetName = session.file.name || 'Untitled.xlsx'
         var targetPath = session.path
+
+        // A workbook that carries a VBA project must be written back as .xlsm,
+        // and the project has to be re-attached after the engine rebuilds the
+        // package (see shim/vba-preserve.js).
+        var hasMacro = false
+        try {
+          if (session.bytes && session.bytes.byteLength) {
+            await ensureVbaPreserver()
+            if (window.__zenVba) hasMacro = !!(await window.__zenVba.inspectMacros(session.bytes)).hasMacro
+          }
+        } catch (e) {
+          console.warn('[genoffice] could not inspect the workbook for macros', e)
+        }
         if (request.mode === 'save-as' || !targetPath) {
           var asked = request.targetPath
             ? baseName(request.targetPath)
             : askName(targetName)
           if (!asked) return { canceled: true }
-          asked = withExtension(safeName(asked), '.xlsx')
+          asked = withExtension(safeName(asked), hasMacro ? '.xlsm' : '.xlsx')
+          if (hasMacro) asked = forceExtension(asked, '.xlsm')
           targetPath = documentPath(asked)
           if (!request.targetPath && (await exists(targetPath))) {
             if (!window.confirm('Replace "' + asked + '"?')) return { canceled: true }
@@ -2509,6 +2757,25 @@
         } else {
           bytes = (await serializeLiveWorkbook(session, request)).bytes
         }
+        // Non-cell parts (VBA project, ribbon, VML buttons, charts, pivot
+        // tables, slicers, ActiveX controls, conditional formatting) are
+        // restored after the engine rebuilds the package.
+        var preserveInfo = { preserved: false, parts: [] }
+        if (!(typeof request.csvContent === 'string' && /\.csv$/i.test(targetPath))) {
+          try {
+            await ensureVbaPreserver()
+            if (window.__zenVba && window.__zenVba.preserveAll) {
+              preserveInfo = await window.__zenVba.preserveAll(bytes, session.bytes)
+              if (preserveInfo.preserved && preserveInfo.bytes) bytes = preserveInfo.bytes
+            }
+          } catch (e) {
+            console.warn('[genoffice] workbook part preservation failed', e)
+          }
+          if (hasMacro && /\.xlsx$/i.test(targetPath)) {
+            // never leave a macro-enabled package behind a plain .xlsx name
+            targetPath = targetPath.replace(/\.xlsx$/i, '.xlsm')
+          }
+        }
         var rel = await writeDocument(targetPath, bytes)
         zenRecoveryClear('xlsx:' + targetPath)
         zenRecoveryClear('xlsx:' + rel)
@@ -2518,7 +2785,7 @@
         parsed.file.unsavedNew = false
         xlsxSessions[parsed.file.sessionId] = parsed
         remember(rel, { bytes: bytes })
-        notifySaved(rel, bytes.byteLength)
+        notifySaved(rel, bytes.byteLength, !!preserveInfo.preserved)
         return {
           canceled: false,
           file: await makeWorkbookFile(parsed),
@@ -5714,4 +5981,15 @@
     ROOT + '{overscroll-behavior:none}' +
     ROOT + ' :not([contenteditable]):not([contenteditable] *):not(input):not(textarea){-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}'
   ;(document.head || document.documentElement).appendChild(css)
+})()
+
+;(function zenMacroMount () {
+  if (!/\/sheets\//.test(window.location.pathname)) return
+  function boot () {
+    if (window.__zenMacroBooted) return
+    window.__zenMacroBooted = true
+    try { if (window.__genofficeMountMacroUi) window.__genofficeMountMacroUi() } catch (e) { console.warn('[genoffice] macro panel failed to mount', e) }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else setTimeout(boot, 0)
 })()
