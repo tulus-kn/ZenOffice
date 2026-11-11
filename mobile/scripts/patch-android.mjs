@@ -284,6 +284,16 @@ console.log('Android immersive display patch applied.')
 
 // Andi Kore Office release build: signing, version, namespace pin and default splash.
 // Idempotent, so a clean `npx cap add android` still builds the same app.
+//
+// Permanent debug keystore: every build must be signed with the SAME key
+// (mobile/debug.keystore, committed in the repo), otherwise Android
+// rejects updates as "package conflicts". The ~/.android copy approach
+// silently failed (run #27 still signed with a fresh key), so the key
+// is pinned directly in the debug signing config instead.
+const debugKeystore = join(mobileDir, 'debug.keystore')
+if (!existsSync(debugKeystore)) {
+  throw new Error('Permanent debug keystore missing: mobile/debug.keystore not found')
+}
 {
   const gradlePath = join(androidDir, 'app/build.gradle')
   const orig = readFileSync(gradlePath, 'utf8')
@@ -304,6 +314,12 @@ console.log('Android immersive display patch applied.')
     g = g.replace(
       old,
       '    signingConfigs {\n' +
+        '        debug {\n' +
+        "            storeFile file('../../debug.keystore')\n" +
+        "            storePassword 'android'\n" +
+        "            keyAlias 'androiddebugkey'\n" +
+        "            keyPassword 'android'\n" +
+        '        }\n' +
         '        release {\n' +
         "            if (ksProps['storeFile']) {\n" +
         "                storeFile file(ksProps['storeFile'])\n" +
@@ -313,13 +329,17 @@ console.log('Android immersive display patch applied.')
         '            }\n' +
         '        }\n' +
         '    }\n' +
-        old +
+        '    buildTypes {\n' +
+        '        debug {\n' +
+        '            signingConfig signingConfigs.debug\n' +
+        '        }\n' +
+        '        release {\n' +
         '            signingConfig signingConfigs.release\n',
     )
   }
   g = g.replace(/namespace\s+"[^"]*"/, 'namespace "com.andikore.office"')
-  g = g.replace(/versionCode\s+\d+/, 'versionCode 4')
-  g = g.replace(/versionName\s+"[^"]*"/, 'versionName "0.1.3-beta"')
+  g = g.replace(/versionCode\s+\d+/, 'versionCode 5')
+  g = g.replace(/versionName\s+"[^"]*"/, 'versionName "0.1.4-beta"')
   if (g !== orig) {
     writeFileSync(gradlePath, g)
     console.log('Release signing, namespace and version applied to build.gradle.')
