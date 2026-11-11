@@ -318,8 +318,8 @@ console.log('Android immersive display patch applied.')
     )
   }
   g = g.replace(/namespace\s+"[^"]*"/, 'namespace "com.andikore.office"')
-  g = g.replace(/versionCode\s+\d+/, 'versionCode 2')
-  g = g.replace(/versionName\s+"[^"]*"/, 'versionName "0.1.1-beta"')
+  g = g.replace(/versionCode\s+\d+/, 'versionCode 3')
+  g = g.replace(/versionName\s+"[^"]*"/, 'versionName "0.1.2-beta"')
   if (g !== orig) {
     writeFileSync(gradlePath, g)
     console.log('Release signing, namespace and version applied to build.gradle.')
