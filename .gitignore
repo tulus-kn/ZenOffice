@@ -48,3 +48,6 @@ _scratch-*
 keystore.properties
 *.apk
 *.aab
+
+# Distributable Android release artifacts are kept under releases/android/
+!releases/android/**/*.apk
